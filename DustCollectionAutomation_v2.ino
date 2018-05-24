@@ -1,3 +1,6 @@
+// EmonLib - Version: Latest 
+#include <EmonLib.h>
+
 /*
  * This code is for the project at 
  * http://www.iliketomakestuff.com/how-to-automate-a-dust-collection-system-arduino
@@ -41,7 +44,7 @@ int DC_spindown = 3000;
 const int NUMBER_OF_TOOLS = 3;
 const int NUMBER_OF_GATES = 6;
 
-String tools[NUMBER_OF_TOOLS] = {"Miter Saw","Table Saw","Band Saw"}; //, "Floor Sweep"
+String tools[NUMBER_OF_TOOLS] = {"load0","load1","load2"}; //, "Floor Sweep"
 int voltSensor[NUMBER_OF_TOOLS] = {A1,A2,A3};
 long int voltBaseline[NUMBER_OF_TOOLS] = {0,0,0};
 
@@ -49,19 +52,18 @@ long int voltBaseline[NUMBER_OF_TOOLS] = {0,0,0};
 //Set the throw of each gate separately, if needed
 int gateMinMax[NUMBER_OF_GATES][2] = {
   /*open, close*/
-  {250,415},//DC right
-  {230,405},//Y
-  {230,405},//miter
-  {285,425},//bandsaw
-  {250,405},//saw y
-  {250,415},//floor sweep
+  {415,335},//5
+  {500,363},//0
+  {550,375},//1
+  {285,410},//2
+  {250,400},//3
+  {290,165},//4
 };
-
 //keep track of gates to be toggled ON/OFF for each tool
 int gates[NUMBER_OF_TOOLS][NUMBER_OF_GATES] = {
-  {1,0,1,0,0,0},
-  {1,1,0,0,1,1},
-  {1,1,0,1,0,0},
+  {1,1,0,0,0,0},
+  {0,0,1,1,0,0},
+  {0,0,0,0,1,1},
 };
 
 const int dustCollectionRelayPin = 11;
@@ -94,7 +96,7 @@ void setup(){
  //currently unused, but could be used for voltage comparison if need be.
   delay(1000);
   for(int i=0;i<NUMBER_OF_TOOLS;i++){
-    pinMode(voltSensor[i],INPUT);
+    pinMode(voltSensor[i],INPUT_PULLUP);
     voltBaseline[i] = analogRead(voltSensor[i]); 
   }
   
@@ -123,12 +125,6 @@ void loop(){
         activeTool = i;
         exit;
       }
-      if( i!=0){
-        if(checkForAmperageChange(0)){
-          activeTool = 0;
-          exit;
-        }
-      }
    }
   if(activeTool != 50){
     // use activeTool for gate processing
@@ -149,6 +145,9 @@ void loop(){
         delay(DC_spindown);
       turnOffDustCollection();  
     }
+     for(int s=0;s<NUMBER_OF_GATES;s++){
+       closeGate(s);
+     }
   }
 }
 boolean checkForAmperageChange(int which){
@@ -199,6 +198,10 @@ float getVPP(int sensor)
            minValue = readValue;
        }
    }
+   Serial.print("minVal: ");
+   Serial.println(minValue);
+   Serial.print("maxVal: ");
+   Serial.println(maxValue);
    
    // Subtract min from max
    result = ((maxValue - minValue) * 5.0)/1024.0;
@@ -207,14 +210,22 @@ float getVPP(int sensor)
  }
 
 void closeGate(uint8_t num){
+  int num2 = num;
+  if (num==0){
+    num2=6;
+  }
   Serial.print("closeGate ");
   Serial.println(num);
-  pwm.setPWM(num, 0, gateMinMax[num][1]);
+  pwm.setPWM(num2, 0, gateMinMax[num][1]);
 }
 void openGate(uint8_t num){
+  int num2 = num;
+  if (num==0){
+    num2=6;
+  }
   Serial.print("openGate ");
   Serial.println(num);
-    pwm.setPWM(num, 0, gateMinMax[num][0]);
+    pwm.setPWM(num2, 0, gateMinMax[num][0]);
     delay(100);
-    pwm.setPWM(num, 0, gateMinMax[num][0]-5);
+    pwm.setPWM(num2, 0, gateMinMax[num][0]-5);
 }
