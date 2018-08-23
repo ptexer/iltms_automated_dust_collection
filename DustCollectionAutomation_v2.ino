@@ -30,7 +30,7 @@ Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 // have!
 
 // our servo # counter
-uint8_t servoCount = 6;
+uint8_t servoCount = 7;
 uint8_t servonum = 0;
 
 const int OPEN_ALL = 100;
@@ -52,18 +52,19 @@ long int voltBaseline[NUMBER_OF_TOOLS] = {0,0,0};
 //Set the throw of each gate separately, if needed
 int gateMinMax[NUMBER_OF_GATES][2] = {
   /*open, close*/
-  {415,335},//5
   {500,363},//0
   {550,375},//1
   {285,410},//2
   {250,400},//3
   {290,165},//4
+  {415,335},//5
+  {250,300},//6
 };
 //keep track of gates to be toggled ON/OFF for each tool
 int gates[NUMBER_OF_TOOLS][NUMBER_OF_GATES] = {
-  {1,1,0,0,0,0},
-  {0,0,1,1,0,0},
-  {0,0,0,0,1,1},
+  {1,1,0,0,0,0,1},
+  {0,0,1,1,0,0,0},
+  {0,0,0,0,1,1,0},
 };
 
 const int dustCollectionRelayPin = 11;
@@ -98,8 +99,7 @@ void setup(){
   for(int i=0;i<NUMBER_OF_TOOLS;i++){
     pinMode(voltSensor[i],INPUT_PULLUP);
     voltBaseline[i] = analogRead(voltSensor[i]); 
-  }
-  
+  } 
 }
 
 void loop(){
@@ -113,7 +113,7 @@ void loop(){
     } else{
       state = HIGH;
      buttonTriggered = true;
-    time = millis();    
+    time = millis();
     }
   }
   previous = reading;
@@ -210,19 +210,11 @@ float getVPP(int sensor)
  }
 
 void closeGate(uint8_t num){
-  int num2 = num;
-  if (num==0){
-    num2=6;
-  }
   Serial.print("closeGate ");
   Serial.println(num);
   pwm.setPWM(num2, 0, gateMinMax[num][1]);
 }
 void openGate(uint8_t num){
-  int num2 = num;
-  if (num==0){
-    num2=6;
-  }
   Serial.print("openGate ");
   Serial.println(num);
     pwm.setPWM(num2, 0, gateMinMax[num][0]);
